@@ -1,0 +1,5 @@
+[DEFAULT]
+BASEURL=http://images.google.com/images?q=site:www.webyfl.com+*&hl=en&lr=&ie=UTF-8&oe=UTF-8&safe=off&sa=N&imgsz=icon
+[InternetShortcut]
+URL=http://images.google.com/images?q=site:www.webyfl.com+*&hl=en&lr=&ie=UTF-8&oe=UTF-8&safe=off&sa=N&imgsz=icon
+Modified=D06F0AF88837C401C5

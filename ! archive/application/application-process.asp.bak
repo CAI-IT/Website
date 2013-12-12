@@ -1,0 +1,280 @@
+<!--#include file="clsUpload.asp" -->
+<%
+'For Each Field In Request.Form
+'	Name = Field
+'	Value = Request.Form(Field)
+'	Response.Write("""" & Name & " = '"" & Replace(objUpload(""" & Name & """), ""'"", ""''"") & ""', "" & _" & chr(10))
+'Next
+strLocalFileDir = Server.MapPath("\") & "\application\data\"
+connStr = "Provider=SQLOLEDB.1;Password=jcceoa;Persist Security Info=True;User ID=admin;Initial Catalog=intranet;Data Source=webserver\webserver"
+Set conADODB = Server.CreateObject("ADODB.Connection")
+conADODB.Open connStr
+
+Set objUpload = New clsUpload
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+If objUpload.Fields("File1").FileName <> "" Then
+	strFileName = objUpload.Fields("File1").FileName
+	strFileName = Replace(Replace(Replace(strFileName, "#", ""), "'", ""), " ", "-")
+	aryFileName = Split(strFileName,".")
+	If objFSO.FileExists(strLocalFileDir & strFileName) Then
+		intCount=0
+		strNewFileName = aryFileName(0)
+		While objFSO.FileExists(strLocalFileDir & strNewFileName & "-" & intCount & "." & aryFileName(Ubound(aryFileName)))
+			intCount=intCount+1
+		WEnd
+		strFileName = strNewFileName & "-" & intCount & "." & aryFileName(Ubound(aryFileName))
+	End If
+	' 1 KB   = 1024 Bytes
+	' 10 KB  = 10240 Bytes
+	' 100 KB = 102400 Bytes
+	' 1 MB	 = 1048576 Bytes
+	' 10 MB  = 10485760 Bytes
+	' 100 MB = 104857600 Bytes
+	
+	intFileSize = objUpload("File1").Length
+	strFileType = objUpload("File1").ContentType
+	' Save the binary data to the file system
+	objUpload("File1").SaveAs strLocalFileDir & strFileName
+Else
+	If Trim(objUpload("Resume").Value) <> "" Then
+		strFileName = Replace(objUpload("Resume").Value, "'", "''")
+	Else
+		strFileName = ""
+	End If
+End If
+strTitle = objUpload("Title").Value
+Set objFSO = Nothing
+
+
+If Trim(objUpload("EmploymentApplicationID").value) = "" Then
+	bUpdate = False
+	SQL = "Insert into EmploymentApplication (SessionID) values ('" & Session.SessionID & "')"
+	conADODB.Execute(SQL)
+
+	SQL = "Select Max(EmploymentApplicationID) As NewID from EmploymentApplication"
+	Set rsEmploymentApplication = Server.CreateObject("ADODB.Recordset")
+	rsEmploymentApplication.Open SQL, conADODB,3,3
+	intEmploymentApplicationID = rsEmploymentApplication("NewID")
+	rsEmploymentApplication.Close()
+	Set rsEmploymentApplication = Nothing
+
+	strSessionID = Session.SessionID
+Else
+	bUpdate = True
+	intEmploymentApplicationID = objUpload("EmploymentApplicationID").value
+	SQL = "Select SessionID from EmploymentApplication Where EmploymentApplicationID = " & intEmploymentApplicationID
+	Set rsEmploymentApplication = Server.CreateObject("ADODB.Recordset")
+	rsEmploymentApplication.Open SQL, conADODB,3,3
+	If Not rsEmploymentApplication.EOF Then
+		strSessionID = rsEmploymentApplication("SessionID")
+	End If
+	rsEmploymentApplication.Close()
+	Set rsEmploymentApplication = Nothing
+	
+	SQL = "Delete from EmploymentSchool Where EmploymentApplicationID = " & intEmploymentApplicationID
+	conADODB.Execute(SQL)
+	
+	SQL = "Delete from EmploymentPast Where EmploymentApplicationID = " & intEmploymentApplicationID
+	conADODB.Execute(SQL)
+	
+	SQL = "Delete from EmploymentReferences Where EmploymentApplicationID = " & intEmploymentApplicationID
+	conADODB.Execute(SQL)
+End If
+
+SQL = "Update EmploymentApplication Set PositionDesired = '" & Replace(objUpload("PositionDesired").value, "'", "''") & "', " & _
+"PartTime = '" & Replace(objUpload("PartTime").value, "'", "''") & "', " & _
+"FullTime = '" & Replace(objUpload("FullTime").value, "'", "''") & "', " & _
+"ApplicationDate = '" & objUpload("ApplicationDate").value & "', " & _
+"FirstName = '" & Replace(objUpload("FirstName").value, "'", "''") & "', " & _
+"LastName = '" & Replace(objUpload("LastName").value, "'", "''") & "', " & _
+"MiddleName = '" & Replace(objUpload("MiddleName").value, "'", "''") & "', " & _
+"PresentAddress = '" & Replace(objUpload("PresentAddress").value, "'", "''") & "', " & _
+"PresentCity = '" & Replace(objUpload("PresentCity").value, "'", "''") & "', " & _
+"PresentState = '" & Replace(objUpload("PresentState").value, "'", "''") & "', " & _
+"PresentTimeThereYears = '" & Replace(objUpload("PresentTimeThereYears").value, "'", "''") & "', " & _
+"PresentTimeThereMonths = '" & Replace(objUpload("PresentTimeThereMonths").value, "'", "''") & "', " & _
+"PreviousAddress = '" & Replace(objUpload("PreviousAddress").value, "'", "''") & "', " & _
+"PreviousCity = '" & Replace(objUpload("PreviousCity").value, "'", "''") & "', " & _
+"PreviousState = '" & Replace(objUpload("PreviousState").value, "'", "''") & "', " & _
+"PreviousTimeThereYears = '" & Replace(objUpload("PreviousTimeThereYears").value, "'", "''") & "', " & _
+"PreviousTimeThereMonths = '" & Replace(objUpload("PreviousTimeThereMonths").value, "'", "''") & "', " & _
+"Phone = '" & Replace(objUpload("Phone").value, "'", "''") & "', " & _
+"SSN = '" & Replace(objUpload("SSN").value, "'", "''") & "', " & _
+"WorkedHereBefore = '" & Replace(objUpload("WorkedHereBefore").value, "'", "''") & "', " & _
+"WorkedHereBeforeDescription = '" & Replace(objUpload("WorkedHereBeforeDescription").value, "'", "''") & "', " & _
+"MisdemeanorOrFelony = '" & Replace(objUpload("MisdemeanorOrFelony").value, "'", "''") & "', " & _
+"MisdemeanorOrFelonyDescription = '" & Replace(objUpload("MisdemeanorOrFelonyDescription").value, "'", "''") & "', " & _
+"Terminated = '" & Replace(objUpload("Terminated").value, "'", "''") & "', " & _
+"TerminatedCircumstances = '" & Replace(objUpload("TerminatedCircumstances").value, "'", "''") & "', " & _
+"EmploymentGaps = '" & Replace(objUpload("EmploymentGaps").value, "'", "''") & "', " & _
+"ContactPastEmployer = '" & Replace(objUpload("ContactPastEmployer").value, "'", "''") & "', " & _
+"ContactPastEmployerDescription = '" & Replace(objUpload("ContactPastEmployerDescription").value, "'", "''") & "', " & _
+"QualificationExperience = '" & Replace(objUpload("QualificationExperience").value, "'", "''") & "', " & _
+"AnotherName = '" & Replace(objUpload("AnotherName").value, "'", "''") & "', " & _
+"AnotherNameDescription = '" & Replace(objUpload("AnotherNameDescription").value, "'", "''") & "', " & _
+"Over18Proof = '" & Replace(objUpload("Over18Proof").value, "'", "''") & "', " & _
+"PerformJobDuties = '" & Replace(objUpload("PerformJobDuties").value, "'", "''") & "', " & _
+"AdequateTransportation = '" & Replace(objUpload("AdequateTransportation").value, "'", "''") & "', " & _
+"DaysMissedYear0 = '" & Replace(objUpload("DaysMissedYear0").value, "'", "''") & "', " & _
+"DaysMissedNumberOfDays0 = '" & Replace(objUpload("DaysMissedNumberOfDays0").value, "'", "''") & "', " & _
+"DaysMissedYear1 = '" & Replace(objUpload("DaysMissedYear1").value, "'", "''") & "', " & _
+"DaysMissedNumberOfDays1 = '" & Replace(objUpload("DaysMissedNumberOfDays1").value, "'", "''") & "', " & _
+"DaysMissedYear2 = '" & Replace(objUpload("DaysMissedYear2").value, "'", "''") & "', " & _
+"DaysMissedNumberOfDays2 = '" & Replace(objUpload("DaysMissedNumberOfDays2").value, "'", "''") & "', " & _
+"Resume = '" & strFileName & "' " & _
+"Where EmploymentApplicationID = " & intEmploymentApplicationID
+
+Response.Write(SQL)
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",0,'" & Replace(objUpload("ElementarySchoolName").value, "'", "''") & "','" & Replace(objUpload("ElementaryYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("ElementaryDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("ElementaryMajor").value, "'", "''") & "','" & Replace(objUpload("ElementarySpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",1,'" & Replace(objUpload("HighSchoolSchoolName").value, "'", "''") & "','" & Replace(objUpload("HighSchoolYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("HighSchoolDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("HighSchoolMajor").value, "'", "''") & "','" & Replace(objUpload("HighSchoolSpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",2,'" & Replace(objUpload("UniversitySchoolName").value, "'", "''") & "','" & Replace(objUpload("UniversityYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("UniversityDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("UniversityMajor").value, "'", "''") & "','" & Replace(objUpload("UniversitySpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",3,'" & Replace(objUpload("GraduateSchoolName").value, "'", "''") & "','" & Replace(objUpload("GraduateYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("GraduateDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("GraduateMajor").value, "'", "''") & "','" & Replace(objUpload("GraduateSpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",4,'" & Replace(objUpload("TradeSchoolName").value, "'", "''") & "','" & Replace(objUpload("TradeYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("TradeDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("TradeMajor").value, "'", "''") & "','" & Replace(objUpload("TradeSpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentSchool (EmploymentApplicationID,SchoolNumber,SchoolName,YearsCompleted,DegreeReceived,Major,SpecializedTraining) values (" & intEmploymentApplicationID & ",5,'" & Replace(objUpload("OtherSchoolName").value, "'", "''") & "','" & Replace(objUpload("OtherYearsCompleted").value, "'", "''") & "','" & Replace(objUpload("OtherDegreeReceived").value, "'", "''") & "','" & Replace(objUpload("OtherMajor").value, "'", "''") & "','" & Replace(objUpload("OtherSpecializedTraining").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",0,'" & Replace(objUpload("EmploymentPast0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo0").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart0").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal0").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor0").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving0").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",1,'" & Replace(objUpload("EmploymentPast1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo1").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart1").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal1").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor1").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving1").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",2,'" & Replace(objUpload("EmploymentPast2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo2").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart2").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal2").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor2").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving2").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",3,'" & Replace(objUpload("EmploymentPast3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo3").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart3").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal3").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor3").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving3").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",4,'" & Replace(objUpload("EmploymentPast4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo4").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart4").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal4").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor4").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving4").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentPast (EmploymentApplicationID,EmployeerNumber,Employer,Address,City,State,ZipCode,EmployedFrom,EmployedTo,PayStart,PayFinal,YourPosition,LastSupervisor,ReasonForLeaving) values (" & intEmploymentApplicationID & ",5,'" & Replace(objUpload("EmploymentPast5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastAddress5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastCity5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastState5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastZipCode5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastFrom5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastTo5").value, "'", "''") & "','" & Replace(Replace(objUpload("EmploymentPastPayStart5").value, "'", "''"), "$", "") & "','" & Replace(Replace(objUpload("EmploymentPastPayFinal5").value, "'", "''"), "$", "") & "','" & Replace(objUpload("EmploymentPastPosition5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastSupervisor5").value, "'", "''") & "','" & Replace(objUpload("EmploymentPastReasonForLeaving5").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentReferences (EmploymentApplicationID,EmployeeReferenceNumber,Name,Occupation,Address,City,State,Phone,YearsKnown) values (" & intEmploymentApplicationID & ",0,'" & Replace(objUpload("EmploymentReferenceName0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceOccupation0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceAddress0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceCity0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceState0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferencePhone0").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceYearsKnown0").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentReferences (EmploymentApplicationID,EmployeeReferenceNumber,Name,Occupation,Address,City,State,Phone,YearsKnown) values (" & intEmploymentApplicationID & ",1,'" & Replace(objUpload("EmploymentReferenceName1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceOccupation1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceAddress1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceCity1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceState1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferencePhone1").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceYearsKnown1").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+SQL = "Insert into EmploymentReferences (EmploymentApplicationID,EmployeeReferenceNumber,Name,Occupation,Address,City,State,Phone,YearsKnown) values (" & intEmploymentApplicationID & ",2,'" & Replace(objUpload("EmploymentReferenceName2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceOccupation2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceAddress2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceCity2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceState2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferencePhone2").value, "'", "''") & "','" & Replace(objUpload("EmploymentReferenceYearsKnown2").value, "'", "''") & "')"
+conADODB.Execute(SQL)
+
+conADODB.Close()
+Set conADODB = Nothing
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+strPage = "https://www.jccap.org/application/application.asp?EmploymentApplicationID=" & intEmploymentApplicationID & "&Key=" & strSessionID
+Set objXML = Server.CreateObject("MSXML2.ServerXMLHTTP")
+objXML.Open "GET", strPage, False
+objXML.Send
+If Err.number = 0 Then
+	strXMLPage = objXML.responseText
+End If
+Set objXML = Nothing
+
+strXMLPage = Replace(strXMLPage, "input {font-family:Verdana; font-size:11px;}", "input {font-family:Verdana; font-size:10px; border-left-color:#ffffff; border-left-style:none; border-right-color:#ffffff; border-right-style:none; border-top-color:#ffffff; border-top-style:none; border-bottom-color:#000000; border-bottom-style:solid;}")
+strXMLPage = Replace(strXMLPage, "Attach Resume:", "")
+
+Set objRegExp = New Regexp
+objRegExp.Global = True
+objRegExp.IgnoreCase = True
+
+
+'Remove Link
+'objRegExp.Pattern = "<a[^>]*>[^<]*</a>"
+'strXMLPage = objRegExp.Replace(strXMLPage, "")
+
+'Replace radio buttons and checkboxes with underscores
+objRegExp.Pattern = "<input([^>]*)type=([^>]*)(checkbox|radio)([^>]*)(\s)checked([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "_<b><u>X</u></b>_")
+
+'Replace radio buttons and checkboxes with underscores
+objRegExp.Pattern = "<input([^>]*)type=([^>]*)(checkbox|radio)([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "___")
+
+'Remove submit buttons, reset buttons and hidden fields
+objRegExp.Pattern = "<input([^>]*)type=([^>]*)(file|submit|button|reset|hidden)([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "")
+
+objRegExp.Pattern = "<form([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "")
+
+objRegExp.Pattern = "</form([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "")
+
+objRegExp.Pattern = "<label([^>]*)>"
+strXMLPage = objRegExp.Replace(strXMLPage, "")
+strXMLPage = Replace(strXMLPage, "</label>", "")
+
+objRegExp.Pattern = "<textarea([^>]*)(cols="")([^>\s]*)("")([^>]*)(rows="")([^>\s]*)("")([^>]*)>([^>]*)</textarea>"
+strXMLPage = objRegExp.Replace(strXMLPage, "<table cellpadding=""2"" cellspacing=""0"" width=""{$3}"" height=""{$7}"" border=""1"" bordercolor=""#333333""><tr valign=""top""><td>$10</td></tr></table>")
+Set objRegExp = Nothing
+
+'Replaces textbox size place holders with underlines
+For i = 1 To 80
+	strXMLPage = Replace(strXMLPage,"width=""{" & i & "}""", "width=""" & i*8 & """")
+	strXMLPage = Replace(strXMLPage,"height=""{" & i & "}""", "height=""" & i*15 & """")
+Next
+
+strXMLPage = Replace(strXMLPage, "<body onload=""document.application.PositionDesired.focus();"">", "<body>")
+
+strXMLPage = Replace(strXMLPage, "<!--####################TABLE1############################ -->", "</table><br><br><br><br><br><br><br><br><table cellpadding=""3"" cellspacing=""1"" border=""1"" bordercolor=""#000000"" width=""665"" align=""center"">")
+strXMLPage = Replace(strXMLPage, "Have you ever used another name?", "<br><br><br>Have you ever used another name?")
+strXMLPage = Replace(strXMLPage, "PERSONAL REFERENCES", "<br><br><br><br><br><br><br><br><br><br><br><br><br>PERSONAL REFERENCES")
+strXMLPage = Replace(strXMLPage, "<body>", "<body onLoad=""window.print();"">")
+aryXMLPage = Split(strXMLPage, "<!-- #############################THECUTOFFPOINT####################################### -->")
+strXMLPage = aryXMLPage(0)
+
+strApplicationFilename = strLocalFileDir & Replace(objUpload("FirstName").value, " ", "-") & "_" & objUpload("LastName").value & "-" & intEmploymentApplicationID & ".htm"
+Set objXMLFSO = Server.CreateObject("Scripting.FileSystemObject")
+Set objXMLFSO = objXMLFSO.CreateTextFile(strApplicationFilename, 2, True)
+objXMLFSO.WriteLine(strXMLPage)
+Set objXMLFSO = Nothing
+
+If bUpdate = False Then
+	Set objMessage = CreateObject("CDO.Message")
+	objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "EXCHANGE"
+	objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+	objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+	objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpconnectiontimeout") = 60
+	objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendusername") = "SMTPAdmin"
+    objMessage.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendpassword") = "8raMAswU"
+	objMessage.Configuration.Fields.Update
+	objMessage.From = "no-reply@jccap.org"
+	objMessage.To = "jelkin@jccap.org; sfusco@jccap.org"
+	objMessage.AddAttachment strApplicationFilename
+	'If (Len(strFileName) > 0) AND (Trim(objUpload("Resume").Value) = "") Then
+	'	objMessage.AddAttachment strFileName
+	'End If
+	objMessage.Subject = "Job Application for " & objUpload("FirstName").value & " " & objUpload("LastName").value
+	objMessage.TextBody = objUpload("FirstName").value & " " & objUpload("LastName").value & " has applied for the position " & objUpload("PositionDesired").value & chr(10) & _
+	"Please view the attachment."
+	objMessage.Fields.Update
+	objMessage.Send
+	Set objMessage = Nothing
+End If
+
+Set objXMLFSO = Server.CreateObject("Scripting.FileSystemObject")
+If objXMLFSO.FileExists(strFilename) Then
+	objXMLFSO.DeleteFile(strFilename)
+End If
+If objXMLFSO.FileExists(strApplicationFilename) Then
+	objXMLFSO.DeleteFile(strApplicationFilename)
+End If
+Set objXMLFSO = Nothing
+Set objUpload = Nothing
+
+Response.Redirect("thank-you.asp?EmploymentApplicationID=" & intEmploymentApplicationID) %>

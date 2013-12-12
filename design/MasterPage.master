@@ -1,0 +1,105 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeFile="MasterPage.master.cs" Inherits="MasterPage" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head runat="server"> 
+  <!--Created by Artisteer v3.0.0.39952
+    Base template (without user's data) checked by http://validator.w3.org : "This page is valid XHTML 1.0 Transitional"-->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title><asp:contentplaceholder id="TitleContentPlaceHolder" runat="server"></asp:contentplaceholder></title>
+    <link rel="stylesheet" href="~/style.css" type="text/css"  media="screen" />
+     <!--[if IE 6]><link rel="stylesheet" href="~/style.ie6.css" type="text/css" media="screen" /><![endif]-->
+    <!--[if IE 7]><link rel="stylesheet" href="~/style.ie7.css" type="text/css" media="screen" /><![endif]-->  
+
+    <asp:ContentPlaceHolder ID="ScriptIncludePlaceHolder" runat="server">
+        <script type="text/javascript" src="<%= ResolveUrl("~/jquery.js") %>"></script>
+        <script type="text/javascript" src="<%= ResolveUrl("~/script.js") %>"></script>
+        <script type="text/javascript">
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', 'UA-15607362-4']);
+          _gaq.push(['_trackPageview']);
+          (function () {
+              var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+              ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+              var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
+    </asp:ContentPlaceHolder>
+    <script type="text/javascript" src="<%=ResolveUrl("~/scripts/sorttable.js") %>"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script> 
+    <script type="text/javascript" src="<%=ResolveUrl("~/scripts/jquery.jshowoff.min.js") %>"></script>
+    <link rel="Stylesheet" href="<%=ResolveUrl("~/scripts/jshowoff.css") %>" type="text/css" />
+</head> 
+<body>
+    <form id="form1" runat="server">
+<div id="art-main">
+<div class="art-sheet">
+    <div class="art-sheet-tl"></div>
+    <div class="art-sheet-tr"></div>
+    <div class="art-sheet-bl"></div>
+    <div class="art-sheet-br"></div>
+    <div class="art-sheet-tc"></div>
+    <div class="art-sheet-bc"></div>
+    <div class="art-sheet-cl"></div>
+    <div class="art-sheet-cr"></div>
+    <div class="art-sheet-cc"></div>
+    <div class="art-sheet-body">
+<div class="art-header">
+    <div class="art-header-clip">
+    <div class="art-header-center">
+        <div class="art-header-png"></div>
+        <div class="art-header-jpeg"></div>
+    </div>
+    </div>
+    <asp:contentplaceholder id="HeaderContentPlaceHolder" runat="server"></asp:contentplaceholder>
+</div>
+<div class="cleared reset-box"></div><div class="art-nav">
+	<div class="art-nav-l"></div>
+	<div class="art-nav-r"></div>
+<div class="art-nav-outer">
+	<asp:contentplaceholder id="MenuContentPlaceHolder" runat="server"></asp:contentplaceholder>
+</div>
+</div>
+<div class="cleared reset-box"></div>
+<div class="art-content-layout">
+    <div class="art-content-layout-row">
+<div class="art-layout-cell art-content">
+<asp:contentplaceholder id="SheetContentPlaceHolder" runat="server"></asp:contentplaceholder>
+  <div class="cleared"></div>
+</div>
+<div class="art-layout-cell art-sidebar1">
+<asp:contentplaceholder id="Sidebar1ContentPlaceHolder" runat="server"></asp:contentplaceholder>
+  <div class="cleared"></div>
+</div>
+
+    </div>
+</div>
+<div class="cleared"></div>
+
+<div class="art-footer">
+    <div class="art-footer-t"></div>
+    <div class="art-footer-l"></div>
+    <div class="art-footer-b"></div>
+    <div class="art-footer-r"></div>
+    <div class="art-footer-body">
+        <div class="art-footer-text">
+            <table style="width:100%">
+                <tr>
+                    <td>
+                        <span style="font-size:7pt">
+                            All persons are provided services without regard to race, color, religious creed, age, sex, ancestry, union membership, sexual orientation, gender identity,<br /> national or ethnic origin, disability and without regard to whether the person is a victim of a violent crime (including domestic violence). Equal Opportunity Employer.
+                            <br /><br /><br />
+                            This site was financed in part by a grant from the federal Department of Health and Human Services<br />
+                            under the Administration of the Commonwealth of Pennsylvania, Department of Community and Economic Development. <br /><br /><br />
+                            The official registration and financial information of Community Action, Inc. may be obtained from the Pennsylvania Department of State<br /> by calling toll free, within Pennsylvania, 1-800-732-0999. Registration does not imply endorsement.
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+    </form>
+</body>
+</html>
